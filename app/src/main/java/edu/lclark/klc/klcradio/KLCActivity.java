@@ -33,6 +33,9 @@ public class KLCActivity extends Activity {
         miniPlayer = (MiniPlayerFragment) getFragmentManager().findFragmentByTag(MINI_PLAYER);
         umbrella = (UmbrellaFragment) getFragmentManager().findFragmentByTag(UMBRELLA);
 
+        // TODO find better way to open app later
+        showMiniPlayer();
+        showUmbrella();
 
     }
 
@@ -57,12 +60,7 @@ public class KLCActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void onMainPlayerClick(View view) {
-        showMiniPlayer();
-        loadUmbrella();
-    }
-
-    private void loadUmbrella() {
+    private void showUmbrella() {
         if (umbrella == null) {
             umbrella = UmbrellaFragment.newInstance();
         }

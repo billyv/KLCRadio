@@ -20,6 +20,7 @@ import android.view.animation.AlphaAnimation;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ToggleButton;
 
 
 /**
@@ -31,8 +32,7 @@ public class MiniPlayerFragment extends Fragment implements View.OnClickListener
     // Height of player as percentage of screen, alpha of player
     private static final double PLAYER_HEIGHT = .075;
     private static final float ALPHA = 0.5f;
-    private Button play;
-    private Button pause;
+    private ToggleButton playPause;
 
     protected static MiniPlayerFragment newInstance() {
         MiniPlayerFragment frag = new MiniPlayerFragment();
@@ -61,48 +61,37 @@ public class MiniPlayerFragment extends Fragment implements View.OnClickListener
         // Then set this frag to be PLAYER_HEIGHT % of that size.
         ViewGroup.LayoutParams params = result.getLayoutParams();
         params.height = (int) (displaySize.y * PLAYER_HEIGHT);
-        // Change some other params as well
-//        result.setAlpha(ALPHA);
-
-//        result.findViewById(R.id.mini_player_container);
 
         result.setLayoutParams(params);
 
-        play = (Button) result.findViewById(R.id.play);
-        play.setOnClickListener(this);
-        pause = (Button) result.findViewById(R.id.pause);
-        pause.setOnClickListener(this);
+        playPause = (ToggleButton) result.findViewById(R.id.play_pause);
+        playPause.setOnClickListener(this);
 
         return result;
     }
 
     @Override
-    public void onAttach(Activity host) {
-        super.onAttach(host);
-    }
-
-    @Override
     public void onClick(View v) {
-        if (v == play) {
-            Log.d(TAG, "starting");
-            Intent serv = new Intent(getActivity(), PlayerService.class);
-            getActivity().startService(serv);
-            Intent broadcast = new Intent();
-            broadcast.setAction(PlayerService.PLAY_STREAM);
-            getActivity().sendBroadcast(broadcast);
-            play.setVisibility(View.GONE);
-            pause.setVisibility(View.VISIBLE);
-        }
-        else if (v == pause) {
-            Log.d(TAG, "pausing");
-            Intent broadcast = new Intent();
-            broadcast.setAction(PlayerService.PAUSE_STREAM);
-            getActivity().sendBroadcast(broadcast);
-            pause.setVisibility(View.GONE);
-            play.setVisibility(View.VISIBLE);
-        }
+        if (v == playPause) {
+            // this is the state AFTER click
+            Boolean on = ((ToggleButton)v).isChecked();
+            Log.d(TAG, on.toString());
 
+            if (on) {
+                Log.d(TAG, "starting");
+                Intent serv = new Intent(getActivity(), PlayerService.class);
+                getActivity().startService(serv);
+                Intent broadcast = new Intent();
+                broadcast.setAction(PlayerService.PLAY_STREAM);
+                getActivity().sendBroadcast(broadcast);
+            }
+            else {
+                Log.d(TAG, "pausing");
+                Intent broadcast = new Intent();
+                broadcast.setAction(PlayerService.PAUSE_STREAM);
+                getActivity().sendBroadcast(broadcast);
+            }
+        }
     }
-
 
 }
