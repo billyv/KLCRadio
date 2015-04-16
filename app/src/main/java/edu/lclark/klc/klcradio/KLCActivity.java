@@ -13,6 +13,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
+//TODO STOP SPAWNING A BILLION ACTIVITIES FROM CLICKING NOTIFICATION OVER AND OVER
 
 public class KLCActivity extends Activity {
 
@@ -34,6 +35,10 @@ public class KLCActivity extends Activity {
         umbrella = (UmbrellaFragment) getFragmentManager().findFragmentByTag(UMBRELLA);
 
         // TODO find better way to open app later
+
+        //TODO this isn't the right way to change display of playPause
+        // rather, lets implement it using broadcasts? event bus?
+        // also, let's create a constants class
         showMiniPlayer();
         showUmbrella();
 
@@ -73,6 +78,6 @@ public class KLCActivity extends Activity {
             miniPlayer = MiniPlayerFragment.newInstance();
         }
 
-        getFragmentManager().beginTransaction().add(android.R.id.content, miniPlayer).commit();
+        getFragmentManager().beginTransaction().replace(android.R.id.content, miniPlayer).commit();
     }
 }

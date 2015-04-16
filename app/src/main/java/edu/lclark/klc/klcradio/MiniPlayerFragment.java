@@ -32,7 +32,7 @@ public class MiniPlayerFragment extends Fragment implements View.OnClickListener
     // Height of player as percentage of screen, alpha of player
     private static final double PLAYER_HEIGHT = .075;
     private static final float ALPHA = 0.5f;
-    private ToggleButton playPause;
+    private ToggleButton playPause; // if checked, pause icon shows.
 
     protected static MiniPlayerFragment newInstance() {
         MiniPlayerFragment frag = new MiniPlayerFragment();
@@ -74,6 +74,7 @@ public class MiniPlayerFragment extends Fragment implements View.OnClickListener
     public void onClick(View v) {
         if (v == playPause) {
             // this is the state AFTER click
+            // so if on is true, it means we just went into Play mode
             Boolean on = ((ToggleButton)v).isChecked();
             Log.d(TAG, on.toString());
 
@@ -93,5 +94,4 @@ public class MiniPlayerFragment extends Fragment implements View.OnClickListener
             }
         }
     }
-
 }
