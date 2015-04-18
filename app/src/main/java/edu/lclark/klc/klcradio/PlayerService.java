@@ -32,18 +32,6 @@ public class PlayerService extends Service
         implements MediaPlayer.OnCompletionListener, AudioManager.OnAudioFocusChangeListener{
     private static final String TAG = "PlayerService";
 
-    private static final String EXTRA_STREAM = "EXTRA_SONG";
-    public static final String INTENT_BASE_NAME = "edu.lclark.klc.klcradio.PlayerService";
-    public static final String PLAY_STREAM = INTENT_BASE_NAME + ".PLAY_STREAM";
-    public static final String PAUSE_STREAM = INTENT_BASE_NAME + ".PAUSE_STREAM";
-    public static final String STOP_STREAM = INTENT_BASE_NAME + ".STOP_STREAM";
-    public static final int PLAYER_ID = 23;
-    public static final String PLAYER_STATE = "PLAYER_STATE";
-    public static final int MSG_MESSENGER = 1;
-    public static final int MSG_PLAY = 2;
-    public static final int MSG_PAUSE = 3;
-    public static final int MSG_STATUS = 4;
-    public static final String HOST_MESSENGER = "HOST_MESSENGER";
     private AudioManager audioMgr;
     private MediaPlayer mp;
     private NotificationManager mgr;
@@ -64,9 +52,9 @@ public class PlayerService extends Service
         playerReceiver = new PlayerReceiver();
 
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(PLAY_STREAM);
-        intentFilter.addAction(PAUSE_STREAM);
-        intentFilter.addAction(STOP_STREAM);
+        intentFilter.addAction(Constants.PLAY_STREAM);
+        intentFilter.addAction(Constants.PAUSE_STREAM);
+        intentFilter.addAction(Constants.STOP_STREAM);
         // I register AudioManager.AUDIO_BECOMING_NOISY in manifest, is it bad to mix and match?
         registerReceiver(playerReceiver, intentFilter);
     }
@@ -95,10 +83,10 @@ public class PlayerService extends Service
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 //communicate w/ hosting activity
-                case MSG_MESSENGER:
+                case Constants.MSG_MESSENGER:
                     mHost = msg.replyTo;
                     break;
-                case MSG_STATUS:
+                case Constants.MSG_STATUS:
                     boolean status;
                     if (mp != null & mp.isPlaying()) {
 //                        status = Boolean.TRUE;
@@ -107,16 +95,18 @@ public class PlayerService extends Service
 //                        status = Boolean.FALSE;
                         status = false;
                     }
-                    Message reply = Message.obtain(null, MSG_STATUS, 0, 0, status);
+                    Message reply = Message.obtain(null, Constants.MSG_STATUS, 0, 0, status);
                     try {
                         mHost.send(reply);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
-                case MSG_PLAY:
+                    break;
+                case Constants.MSG_PLAY:
+                    Log.d(TAG, "playing from handler in service");
                     play();
                     break;
-                case MSG_PAUSE:
+                case Constants.MSG_PAUSE:
                     pause();
                     break;
                 default:
@@ -171,8 +161,8 @@ public class PlayerService extends Service
         if (mp == null) initMediaPlayer();
         if (!mp.isPlaying()) {
             mp.start();
-            sendMsg(MSG_PLAY);
-            startForeground(PLAYER_ID, buildPlayerNotification());
+            sendMsg(Constants.MSG_PLAY);
+            startForeground(Constants.PLAYER_ID, buildPlayerNotification());
         }
     }
 
@@ -184,9 +174,9 @@ public class PlayerService extends Service
 
         if (mp != null && mp.isPlaying()) {
             mp.pause();
-            sendMsg(MSG_PAUSE);
+            sendMsg(Constants.MSG_PAUSE);
             stopForeground(false);
-            mgr.notify(PLAYER_ID, buildPlayerNotification());
+            mgr.notify(Constants.PLAYER_ID, buildPlayerNotification());
 
         }
         else {
@@ -197,6 +187,10 @@ public class PlayerService extends Service
     }
 
     private void stop() {
+        // We need to pause here because if the activity is still active while
+        // stop() is called, then we will not progress into onDestroy() but still want to stop
+        // playback. (Which happens definitively in onDestroy)
+        pause();
         stopForeground(true);
         stopSelf();
     }
@@ -230,7 +224,7 @@ public class PlayerService extends Service
                 .getActivity(this, 0, notifIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         // STOP
-        Intent stopIntent = new Intent(STOP_STREAM);
+        Intent stopIntent = new Intent(Constants.STOP_STREAM);
         PendingIntent stopPI = PendingIntent
                 .getBroadcast(this, 0, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         NotificationCompat.Action stop = new NotificationCompat
@@ -245,7 +239,7 @@ public class PlayerService extends Service
 
         if (mp != null && mp.isPlaying()) {
             // PAUSE
-            Intent pauseIntent = new Intent(PAUSE_STREAM);
+            Intent pauseIntent = new Intent(Constants.PAUSE_STREAM);
             PendingIntent pausePI = PendingIntent
                     .getBroadcast(this, 0, pauseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
             NotificationCompat.Action pause = new NotificationCompat
@@ -255,7 +249,7 @@ public class PlayerService extends Service
         }
         else {
             // PLAY
-            Intent playIntent = new Intent(PLAY_STREAM);
+            Intent playIntent = new Intent(Constants.PLAY_STREAM);
             PendingIntent playPI = PendingIntent
                     .getBroadcast(this, 0, playIntent, PendingIntent.FLAG_UPDATE_CURRENT);
             NotificationCompat.Action play = new NotificationCompat
@@ -271,7 +265,7 @@ public class PlayerService extends Service
     @Override
     public void onAudioFocusChange(int focusChange) {
         //TODO this regains focus even if you have been listening to something else for a long time
-        // do we want this to happen?
+        // do we want this to happen? ~~prolly yeah
         switch (focusChange) {
 
             case AudioManager.AUDIOFOCUS_GAIN:
@@ -279,7 +273,7 @@ public class PlayerService extends Service
                 if (mp == null) initMediaPlayer();
                 if (!mp.isPlaying()) {
                     mp.start();
-                    sendMsg(MSG_PLAY);
+                    sendMsg(Constants.MSG_PLAY);
                 }
                 // This is max volume WITHIN STREAM_MUSIC volume.
                 mp.setVolume(1.0f, 1.0f);
@@ -292,7 +286,7 @@ public class PlayerService extends Service
                 mp.reset();
                 mp.release();
                 mp = null;
-                mgr.notify(PLAYER_ID, buildPlayerNotification());
+                mgr.notify(Constants.PLAYER_ID, buildPlayerNotification());
                 break;
 
             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
@@ -313,16 +307,16 @@ public class PlayerService extends Service
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
 
-            if (action.equals(PLAY_STREAM)) {
-                Log.d(TAG, PLAY_STREAM + " received");
+            if (action.equals(Constants.PLAY_STREAM)) {
+                Log.d(TAG, "PLAY_STREAM received");
                 play();
             }
-            else if (action.equals(PAUSE_STREAM)) {
-                Log.d(TAG, PAUSE_STREAM + " received");
+            else if (action.equals(Constants.PAUSE_STREAM)) {
+                Log.d(TAG, "PAUSE_STREAM received");
                 pause();
             }
-            else if (action.equals(STOP_STREAM)) {
-                Log.d(TAG, STOP_STREAM + " received");
+            else if (action.equals(Constants.STOP_STREAM)) {
+                Log.d(TAG, "STOP_STREAM received");
                 stop();
             }
             else if (action.equals(AudioManager.ACTION_AUDIO_BECOMING_NOISY)) {

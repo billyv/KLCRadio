@@ -47,7 +47,7 @@ public class MiniPlayerFragment extends Fragment implements View.OnClickListener
         @Override
         public void onServiceConnected(ComponentName className, IBinder service){
             mService = new Messenger(service);
-            Message msg = Message.obtain(null, PlayerService.MSG_MESSENGER, 0, 0);
+            Message msg = Message.obtain(null, Constants.MSG_MESSENGER, 0, 0);
             msg.replyTo = mMessenger;
             try {
                 mService.send(msg);
@@ -57,7 +57,7 @@ public class MiniPlayerFragment extends Fragment implements View.OnClickListener
             }
             // Here we check whether the stream is currently playing, so our button is in proper state
             // the response gives us status, handled in our handler.
-            msg = Message.obtain(null, PlayerService.MSG_STATUS, 0, 0);
+            msg = Message.obtain(null, Constants.MSG_STATUS, 0, 0);
             try {
                 mService.send(msg);
             } catch (RemoteException e) {
@@ -78,16 +78,16 @@ public class MiniPlayerFragment extends Fragment implements View.OnClickListener
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case PlayerService.MSG_STATUS:
+                case Constants.MSG_STATUS:
                     playPause.setChecked((boolean)msg.obj);
                     playPause.setVisibility(View.VISIBLE);
                     break;
-                case PlayerService.MSG_PLAY:
+                case Constants.MSG_PLAY:
                     Log.d(TAG, "received PLAY and bound is " + mBound);
                     playPause.setChecked(true);
 //                    playPause.invalidate();
                     break;
-                case PlayerService.MSG_PAUSE:
+                case Constants.MSG_PAUSE:
                     Log.d(TAG, "received PAUSE and bound is " + mBound);
                     playPause.setChecked(false);
 //                    playPause.invalidate();
@@ -153,6 +153,7 @@ public class MiniPlayerFragment extends Fragment implements View.OnClickListener
 
     @Override
     public void onClick(View v) {
+        Log.d(TAG, "in onClick");
         if (v == playPause) {
             // this is the state AFTER click
             // so if on is true, it means we just went into Play mode
@@ -160,7 +161,7 @@ public class MiniPlayerFragment extends Fragment implements View.OnClickListener
 
             if (on) {
                 Log.d(TAG, "playing from frag");
-                Message msg = Message.obtain(null, PlayerService.MSG_PLAY, 0, 0);
+                Message msg = Message.obtain(null, Constants.MSG_PLAY, 0, 0);
                 try {
                     mService.send(msg);
                 } catch (RemoteException e) {
@@ -169,7 +170,7 @@ public class MiniPlayerFragment extends Fragment implements View.OnClickListener
             }
             else {
                 Log.d(TAG, "pausing from frag");
-                Message msg = Message.obtain(null, PlayerService.MSG_PAUSE, 0, 0);
+                Message msg = Message.obtain(null, Constants.MSG_PAUSE, 0, 0);
                 try {
                     mService.send(msg);
                 } catch (RemoteException e) {

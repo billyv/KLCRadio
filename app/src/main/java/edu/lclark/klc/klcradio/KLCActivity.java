@@ -14,9 +14,12 @@ import android.view.View;
 import android.view.ViewGroup;
 
 //TODO "KLC Radio has stopped working" coming up randomly even after app has been closed long ago
-//TODO make a constants class
-//TODO often starts in playing state even tho i assumed the service is dead... the app should open in pause
-//TODO hitting x button on notif while still in the app does not stop the stream
+// this hasn't happened in a bit -- possibly fixed by other changes? keep eye out
+
+//TODO calendar portion of app
+//TODO side drawer -- calendar, tumblr, twitter - what else shall we add?
+//TODO tumblr just a webview atm, add progress bar and remove tumblr menu or use tubmlr web api and customize
+//TODO art + styling
 
 public class KLCActivity extends Activity {
 
