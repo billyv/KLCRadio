@@ -13,7 +13,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-//TODO STOP SPAWNING A BILLION ACTIVITIES FROM CLICKING NOTIFICATION OVER AND OVER
+//TODO "KLC Radio has stopped working" coming up randomly even after app has been closed long ago
+//TODO make a constants class
+//TODO often starts in playing state even tho i assumed the service is dead... the app should open in pause
+//TODO hitting x button on notif while still in the app does not stop the stream
 
 public class KLCActivity extends Activity {
 

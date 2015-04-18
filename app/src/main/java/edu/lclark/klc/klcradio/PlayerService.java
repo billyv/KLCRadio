@@ -13,7 +13,11 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Binder;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
@@ -35,14 +39,22 @@ public class PlayerService extends Service
     public static final String STOP_STREAM = INTENT_BASE_NAME + ".STOP_STREAM";
     public static final int PLAYER_ID = 23;
     public static final String PLAYER_STATE = "PLAYER_STATE";
+    public static final int MSG_MESSENGER = 1;
+    public static final int MSG_PLAY = 2;
+    public static final int MSG_PAUSE = 3;
+    public static final int MSG_STATUS = 4;
+    public static final String HOST_MESSENGER = "HOST_MESSENGER";
     private AudioManager audioMgr;
     private MediaPlayer mp;
     private NotificationManager mgr;
     private PlayerReceiver playerReceiver;
+    private Messenger mHost = null;
+
+    //////////////////////////////////////LIFECYCLE////////////////////////////////////////////////
 
     @Override
     public void onCreate() {
-        Log.d(TAG, "in on create");
+        Log.d(TAG, "in on create of service");
         super.onCreate();
 
         // Initialize MediaPlayer
@@ -57,8 +69,6 @@ public class PlayerService extends Service
         intentFilter.addAction(STOP_STREAM);
         // I register AudioManager.AUDIO_BECOMING_NOISY in manifest, is it bad to mix and match?
         registerReceiver(playerReceiver, intentFilter);
-
-        play();
     }
 
     @Override
@@ -78,14 +88,64 @@ public class PlayerService extends Service
         unregisterReceiver(playerReceiver);
     }
 
+    //////////////////////////////////////BIND&MESSAGING////////////////////////////////////////////
+
+    class IncomingHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                //communicate w/ hosting activity
+                case MSG_MESSENGER:
+                    mHost = msg.replyTo;
+                    break;
+                case MSG_STATUS:
+                    boolean status;
+                    if (mp != null & mp.isPlaying()) {
+//                        status = Boolean.TRUE;
+                        status = true;
+                    } else {
+//                        status = Boolean.FALSE;
+                        status = false;
+                    }
+                    Message reply = Message.obtain(null, MSG_STATUS, 0, 0, status);
+                    try {
+                        mHost.send(reply);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                case MSG_PLAY:
+                    play();
+                    break;
+                case MSG_PAUSE:
+                    pause();
+                    break;
+                default:
+                    super.handleMessage(msg);
+            }
+        }
+    }
+
+    private final Messenger mMessenger = new Messenger(new IncomingHandler());
+
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return mMessenger.getBinder();
     }
+
+    public void sendMsg(int what) {
+        Message msg = Message.obtain(null, what, 0, 0);
+        try {
+            mHost.send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    ///////////////////////////////////////MEDIAPLAYER//////////////////////////////////////////////
 
     @Override
     public void onCompletion(MediaPlayer mediaPlayer) {
-        // when mediaPlayer finishes.. should never happen
+        // when mediaPlayer finishes.. should never happen in final build
         Log.d(TAG, "onCompletion called");
         String message = "Stream failed";
         Toast.makeText(this, message, Toast.LENGTH_LONG);
@@ -111,6 +171,7 @@ public class PlayerService extends Service
         if (mp == null) initMediaPlayer();
         if (!mp.isPlaying()) {
             mp.start();
+            sendMsg(MSG_PLAY);
             startForeground(PLAYER_ID, buildPlayerNotification());
         }
     }
@@ -123,11 +184,12 @@ public class PlayerService extends Service
 
         if (mp != null && mp.isPlaying()) {
             mp.pause();
+            sendMsg(MSG_PAUSE);
             stopForeground(false);
             mgr.notify(PLAYER_ID, buildPlayerNotification());
 
         }
-        else if (mp != null && !mp.isPlaying()) {
+        else {
             Log.d(TAG, "Trying to pause while not playing");
             // Something going on we don't want so stop foreground and let process kill service
             stopForeground(true);
@@ -144,9 +206,7 @@ public class PlayerService extends Service
             mp = MediaPlayer.create(this, R.raw.easy); //TODO waiting on KLC for actual stream
             Log.d(TAG, "created new mp");
 //            mp.prepare(); create() already prepares it.
-            mp.start();
             mp.setOnCompletionListener(this);
-            startForeground(PLAYER_ID, buildPlayerNotification());
             Log.d(TAG, "mp created");
         } catch (Exception ioe){ //IOException ioe) {
             Log.e(TAG, "error playing stream " + ioe.getMessage());
@@ -219,6 +279,7 @@ public class PlayerService extends Service
                 if (mp == null) initMediaPlayer();
                 if (!mp.isPlaying()) {
                     mp.start();
+                    sendMsg(MSG_PLAY);
                 }
                 // This is max volume WITHIN STREAM_MUSIC volume.
                 mp.setVolume(1.0f, 1.0f);

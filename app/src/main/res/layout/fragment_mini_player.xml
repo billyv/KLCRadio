@@ -16,7 +16,10 @@
         android:textOn=""
         android:textOff=""
         android:checked="false"
-        android:visibility="visible"/>
+        android:visibility="invisible"/>
+
+    <!-- it starts invisible because we wait for data from our bound service to determine checkedState,
+    then make it visible -->
 
 
 
