@@ -6,6 +6,7 @@ import android.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebViewClient;
 import android.webkit.WebViewFragment;
 import android.widget.TextView;
 
@@ -38,7 +39,10 @@ public class UmbrellaFragment extends WebViewFragment {
 
         // Splice in our own settings and load url
         getWebView().getSettings().setJavaScriptEnabled(true);
-        getWebView().getSettings().setSupportZoom(true);
+        // This essentially stops the WebView from trying to open browser on clicks.
+        // I don't have to create my own because default behavior is to just load any clicked URLS
+        // into the WebView here.
+        getWebView().setWebViewClient(new WebViewClient());
         getWebView().loadUrl(url);
 
         return result;

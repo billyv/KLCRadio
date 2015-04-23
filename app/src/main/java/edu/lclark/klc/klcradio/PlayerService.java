@@ -8,22 +8,16 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.os.Binder;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
-
-import java.io.IOException;
 
 /**
  * Created by Billy on 2015-04-05.
@@ -36,7 +30,7 @@ public class PlayerService extends Service
     private MediaPlayer mp;
     private NotificationManager mgr;
     private PlayerReceiver playerReceiver;
-    private Messenger mHost = null;
+    private Messenger hostMessenger = null;
 
     //////////////////////////////////////LIFECYCLE////////////////////////////////////////////////
 
@@ -84,7 +78,7 @@ public class PlayerService extends Service
             switch (msg.what) {
                 //communicate w/ hosting activity
                 case Constants.MSG_MESSENGER:
-                    mHost = msg.replyTo;
+                    hostMessenger = msg.replyTo;
                     break;
                 case Constants.MSG_STATUS:
                     boolean status;
@@ -97,7 +91,7 @@ public class PlayerService extends Service
                     }
                     Message reply = Message.obtain(null, Constants.MSG_STATUS, 0, 0, status);
                     try {
-                        mHost.send(reply);
+                        hostMessenger.send(reply);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
@@ -125,7 +119,7 @@ public class PlayerService extends Service
     public void sendMsg(int what) {
         Message msg = Message.obtain(null, what, 0, 0);
         try {
-            mHost.send(msg);
+            hostMessenger.send(msg);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -138,7 +132,8 @@ public class PlayerService extends Service
         // when mediaPlayer finishes.. should never happen in final build
         Log.d(TAG, "onCompletion called");
         String message = "Stream failed";
-        Toast.makeText(this, message, Toast.LENGTH_LONG);
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        stop();
         stopSelf();
     }
 

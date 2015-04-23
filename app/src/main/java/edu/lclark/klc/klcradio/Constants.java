@@ -13,4 +13,6 @@ public class Constants {
     public static final int MSG_PLAY = 2;
     public static final int MSG_PAUSE = 3;
     public static final int MSG_STATUS = 4;
+    // Height of player as percentage of screen size
+    public static final double PLAYER_HEIGHT = .075;
 }
